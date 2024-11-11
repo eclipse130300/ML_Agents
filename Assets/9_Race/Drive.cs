@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 public class Drive : MonoBehaviour
@@ -7,6 +9,28 @@ public class Drive : MonoBehaviour
     public float speed = 50.0f;
     public float rotationSpeed = 100.0f;
     public float visibleDistance = 200.0f;
+    List<string> collectedTrainingData = new List<string>();
+    StreamWriter tdf;
+
+    private void Start()
+    {
+        string path = Application.dataPath + "9_Race/trainingData.txt";
+        tdf = File.CreateText(path);
+    }
+
+    private void OnApplicationQuit()
+    {
+        foreach (string td in collectedTrainingData)
+        {
+            tdf.WriteLine(td);
+        }
+        tdf.Close();
+    }
+
+    float Round(float x)
+    {
+        return (float)Math.Round(x, System.MidpointRounding.AwayFromZero) / 2.0f;
+    }
 
     void Update()
     {
@@ -29,37 +53,40 @@ public class Drive : MonoBehaviour
         Debug.DrawRay(transform.position, transform.right * visibleDistance, Color.red);
         
         RaycastHit hit;
-        float fdist = visibleDistance,
-              rdist = visibleDistance,
-              ldist = visibleDistance,
-              r45dist = visibleDistance,
-              l45dist = visibleDistance;
+        float fdist = 0,
+              rdist = 0,
+              ldist = 0,
+              r45dist = 0,
+              l45dist = 0;
 
         if (Physics.Raycast(transform.position, transform.forward, out hit, visibleDistance))
         {
-            fdist = hit.distance;
+            fdist = 1 - Round(hit.distance / visibleDistance);
         }
         
         if (Physics.Raycast(transform.position, transform.right, out hit, visibleDistance))
         {
-            rdist = hit.distance;
+            rdist = 1 - Round(hit.distance / visibleDistance);
         }
         
         if (Physics.Raycast(transform.position, -transform.right, out hit, visibleDistance))
         {
-            ldist = hit.distance;
+            ldist = 1 - Round(hit.distance / visibleDistance);
         }
         
-        if (Physics.Raycast(transform.position, Quaternion.AngleAxis(45, transform.up) * transform.right, out hit, visibleDistance))
+        if (Physics.Raycast(transform.position, Quaternion.AngleAxis(-45, transform.up) * transform.right, out hit, visibleDistance))
         {
-            r45dist = hit.distance;
+            r45dist = 1 - Round(hit.distance / visibleDistance);
         }
         
-        if (Physics.Raycast(transform.position, Quaternion.AngleAxis(- 45, transform.up) * -transform.right, out hit, visibleDistance))
+        if (Physics.Raycast(transform.position, Quaternion.AngleAxis(45, transform.up) * -transform.right, out hit, visibleDistance))
         {
-            l45dist = hit.distance;
+            l45dist = 1 - Round(hit.distance / visibleDistance);
         }
         
-        string td = fdist + "," + rdist + "," + ldist + "," + r45dist + "," + l45dist + "," + translationInput + "," + rotationInput;
+        string td = fdist + "," + rdist + "," + ldist + "," + r45dist + "," + l45dist + "," + Round(translationInput) + "," + Round(rotationInput);
+        
+        if(!collectedTrainingData.Contains(td))
+            collectedTrainingData.Add(td);
     }
 }

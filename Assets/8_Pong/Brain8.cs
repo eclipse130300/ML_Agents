@@ -19,7 +19,7 @@ public class Brain8 : MonoBehaviour
     
     void Start()
     {
-        ann = new ANN8(6, 1, 1, 4, 0.11);
+        ann = new ANN8(6, 1, 1, 4, 0.6);
         brb = ball.GetComponent<Rigidbody2D>();
     }
     
