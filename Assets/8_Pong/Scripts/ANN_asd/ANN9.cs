@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using NeuralNetworkToolkit;
 using UnityEngine;
 
 public class ANN9{
@@ -168,23 +169,21 @@ public class ANN9{
 
 	double ActivationFunction(double value)
 	{
-		return TanH(value);
+		return NeuralNetworkTools.GetActivationFunctionByType(value, ActivationFunctionType.TanH);
 	}
 
 	double ActivationFunctionO(double value)
 	{
-		return TanH(value);
+		return NeuralNetworkTools.GetActivationFunctionByType(value, ActivationFunctionType.TanH);
 	}
-
-	double TanH(double value)
+	
+	double GetDerivative(double value)
 	{
-		double k = (double) System.Math.Exp(-2*value);
-    	return 2 / (1.0f + k) - 1;
+		return NeuralNetworkTools.GetActivationFunctionDerivativeByType(value, ActivationFunctionType.TanH);
 	}
-
-	double Sigmoid(double value) 
+	
+	double GetDerivativeO(double value)
 	{
-    	double k = (double) System.Math.Exp(value);
-    	return k / (1.0f + k);
+		return NeuralNetworkTools.GetActivationFunctionDerivativeByType(value, ActivationFunctionType.TanH);
 	}
 }

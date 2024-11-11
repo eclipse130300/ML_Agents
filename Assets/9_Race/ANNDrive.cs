@@ -1,17 +1,17 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using UnityEngine;
 
 public class ANNDrive : MonoBehaviour
 {
-    ANN ann;
+    ANN9 ann;
     public float visibleDistance = 200;
     public int epochs = 1000;
     public float speed = 50f;
     public float rotationSpeed = 100f;
-    public LayerMask layerMask;
     
     bool trainingDone = false;
     float trainingProgress = 0;
@@ -23,7 +23,7 @@ public class ANNDrive : MonoBehaviour
 
     private void Start()
     {
-        ann = new ANN(5, 2, 1, 10, 0.5);
+        ann = new ANN9(5, 2, 1, 16, 0.5f);
         StartCoroutine(LoadTrainingSet());
     }
 
@@ -36,7 +36,7 @@ public class ANNDrive : MonoBehaviour
 
     IEnumerator LoadTrainingSet()
     {
-        string path = Application.dataPath + "9_Race/trainingData.txt";
+        string path = Application.dataPath + "/9_Race/trainingData.txt";
         string line;
 
         if (File.Exists(path))
@@ -51,26 +51,31 @@ public class ANNDrive : MonoBehaviour
             {
                 sse = 0;
                 tdf.BaseStream.Position = 0;
+                string currentWeights = ann.PrintWeights();
+                
                 while ((line = tdf.ReadLine()) != null)
                 {
                     string[] data = line.Split(',');
 
                     float thisError = 0;
-                    if(System.Convert.ToDouble(data[5]) != 0 && System.Convert.ToDouble(data[6]) != 0)
+                    var data5 = ConvertFromString(data[5]);
+                    var data6 = ConvertFromString(data[6]);
+                    
+                    if(data5 != 0f && data6 != 0f)
                     {
                         inputs.Clear();
                         outputs.Clear();
                         
-                        inputs.Add(System.Convert.ToDouble(data[0]));
-                        inputs.Add(System.Convert.ToDouble(data[1]));
-                        inputs.Add(System.Convert.ToDouble(data[2]));
-                        inputs.Add(System.Convert.ToDouble(data[3]));
-                        inputs.Add(System.Convert.ToDouble(data[4]));
+                        inputs.Add(ConvertFromString(data[0]));
+                        inputs.Add(ConvertFromString(data[1]));
+                        inputs.Add(ConvertFromString(data[2]));
+                        inputs.Add(ConvertFromString(data[3]));
+                        inputs.Add(ConvertFromString(data[4]));
                         
-                        double o1 = Map(0, 1, -1, 1, System.Convert.ToSingle(data[5]));
+                        double o1 = Map(0, 1, -1, 1, ConvertToSingleFromString(data[5]));
                         outputs.Add(o1);
                         
-                        double o2 = Map(0, 1, -1, 1, System.Convert.ToSingle(data[6]));
+                        double o2 = Map(0, 1, -1, 1, ConvertToSingleFromString(data[6]));
                         outputs.Add(o2);
 
                         calcOutputs = ann.Train(inputs, outputs);
@@ -84,14 +89,34 @@ public class ANNDrive : MonoBehaviour
                 
                 trainingProgress = ((float)i / (float)epochs);
                 sse /= lineCount;
-                lastSSE = sse;
-
+                
+                if(lastSSE < sse)
+                {
+                    ann.LoadWeights(currentWeights);
+                    ann.alpha = Mathf.Clamp((float)ann.alpha - 0.01f, 0.01f, 0.9f);
+                }
+                else
+                {
+                    ann.alpha = Mathf.Clamp((float)ann.alpha + 0.01f, 0.01f, 0.9f);
+                    lastSSE = sse;
+                }
+                
                 yield return null;
             }
             
         }
 
         trainingDone = true;
+    }
+
+    private double ConvertFromString(string str)
+    {
+        return System.Convert.ToDouble(str, CultureInfo.InvariantCulture);
+    }
+
+    private float ConvertToSingleFromString(string str)
+    {
+        return System.Convert.ToSingle(str, CultureInfo.InvariantCulture);
     }
     
     float Map(float newFrom, float newTo, float origFrom, float origTo, float value)
@@ -105,5 +130,65 @@ public class ANNDrive : MonoBehaviour
             return newTo;
         }
         return (newTo - newFrom) * ((value - origFrom) / (origTo - origFrom)) + newFrom;
+    }
+
+    private void Update()
+    {
+        if(!trainingDone)
+            return;
+        
+        List<double> inputs = new List<double>();
+        List<double> outputs = new List<double>();
+        List<double> calcOutputs = new List<double>();
+        
+        RaycastHit hit;
+        float fDist = 0,
+              rDist = 0,
+              lDist = 0,
+              r45Dist = 0,
+              l45Dist = 0;
+
+        if (Physics.Raycast(transform.position, transform.forward, out hit, visibleDistance))
+        {
+            fDist = 1 - (hit.distance / visibleDistance);
+        }
+        
+        if (Physics.Raycast(transform.position, transform.right, out hit, visibleDistance))
+        {
+            rDist = 1 - (hit.distance / visibleDistance);
+        }
+        
+        if (Physics.Raycast(transform.position, -transform.right, out hit, visibleDistance))
+        {
+            lDist = 1 - (hit.distance / visibleDistance);
+        }
+        
+        if (Physics.Raycast(transform.position, Quaternion.AngleAxis(-45, transform.up) * transform.right, out hit, visibleDistance))
+        {
+            r45Dist = 1 - (hit.distance / visibleDistance);
+        }
+        
+        if (Physics.Raycast(transform.position, Quaternion.AngleAxis(45, transform.up) * -transform.right, out hit, visibleDistance))
+        {
+            l45Dist = 1 - (hit.distance / visibleDistance);
+        }
+        
+        inputs.Add(fDist);
+        inputs.Add(rDist);
+        inputs.Add(lDist);
+        inputs.Add(r45Dist);
+        inputs.Add(l45Dist);
+        
+        outputs.Add(0);
+        outputs.Add(0);
+        
+        calcOutputs = ann.CalcOutput(inputs, outputs);
+        float translationInput = (float)Map(-1, 1, 0, 1, (float)calcOutputs[0]);
+        float rotationInput = (float)Map(-1, 1, 0, 1, (float)calcOutputs[1]);
+        translation = Time.deltaTime * translationInput * speed;
+        rotation = Time.deltaTime * rotationInput * rotationSpeed;
+        
+        transform.Translate(0, 0, translation);
+        transform.Rotate(0, rotation, 0);
     }
 }

@@ -14,7 +14,7 @@ public class Drive : MonoBehaviour
 
     private void Start()
     {
-        string path = Application.dataPath + "9_Race/trainingData.txt";
+        string path = Application.dataPath + "/9_Race/trainingData.txt";
         tdf = File.CreateText(path);
     }
 
@@ -25,6 +25,7 @@ public class Drive : MonoBehaviour
             tdf.WriteLine(td);
         }
         tdf.Close();
+        Debug.Log("Training data saved.");
     }
 
     float Round(float x)
