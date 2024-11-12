@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using UnityEngine;
 
@@ -40,6 +41,9 @@ public class Drive : MonoBehaviour
         // The value is in the range -1 to 1
         float translationInput = Input.GetAxis("Vertical");
         float rotationInput = Input.GetAxis("Horizontal");
+        
+        /*Debug.Log("translationInput: " + translationInput);
+        Debug.Log("rotationInput: " + rotationInput);*/
         
         float translation = Time.deltaTime * translationInput * speed;
         float rotation = Time.deltaTime * rotationInput * rotationSpeed;
@@ -85,7 +89,16 @@ public class Drive : MonoBehaviour
             l45dist = 1 - Round(hit.distance / visibleDistance);
         }
         
-        string td = fdist + "," + rdist + "," + ldist + "," + r45dist + "," + l45dist + "," + Round(translationInput) + "," + Round(rotationInput);
+        var translationInputRounded = Round(translationInput).ToString(CultureInfo.InvariantCulture);
+        var rotationInputRounded = Round(rotationInput).ToString(CultureInfo.InvariantCulture);
+        
+        /*Debug.Log("Translation input rounded: " + translationInputRounded);
+        Debug.Log("Rotation input rounded: " + rotationInputRounded);*/
+        
+        string td = fdist.ToString(CultureInfo.InvariantCulture) + "," + rdist.ToString(CultureInfo.InvariantCulture) + "," + ldist.ToString(CultureInfo.InvariantCulture) + "," 
+                  + r45dist.ToString(CultureInfo.InvariantCulture) + "," + l45dist.ToString(CultureInfo.InvariantCulture) + "," +
+                    translationInputRounded
+                  + "," + rotationInputRounded;
         
         if(!collectedTrainingData.Contains(td))
             collectedTrainingData.Add(td);

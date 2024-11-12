@@ -7,7 +7,7 @@ using UnityEngine;
 
 public class ANNDrive : MonoBehaviour
 {
-    ANN9 ann;
+    ANN8 ann;
     public float visibleDistance = 200;
     public int epochs = 1000;
     public float speed = 50f;
@@ -20,11 +20,22 @@ public class ANNDrive : MonoBehaviour
 
     public float translation;
     public float rotation;
+    
+    public bool loadWeightsFromFile = false;
 
     private void Start()
     {
-        ann = new ANN9(5, 2, 1, 16, 0.5f);
-        StartCoroutine(LoadTrainingSet());
+        ann = new ANN8(5, 2, 1, 10, 0.5f);
+
+        if (loadWeightsFromFile)
+        {
+            LoadWeightsFromFile();
+            trainingDone = true;
+        }
+        else
+        {
+            StartCoroutine(LoadTrainingSet());
+        }
     }
 
     private void OnGUI()
@@ -72,10 +83,10 @@ public class ANNDrive : MonoBehaviour
                         inputs.Add(ConvertFromString(data[3]));
                         inputs.Add(ConvertFromString(data[4]));
                         
-                        double o1 = Map(0, 1, -1, 1, ConvertToSingleFromString(data[5]));
+                        double o1 = Map(0, 1, -0.5f, 0.5f, ConvertToSingleFromString(data[5]));
                         outputs.Add(o1);
                         
-                        double o2 = Map(0, 1, -1, 1, ConvertToSingleFromString(data[6]));
+                        double o2 = Map(0, 1, -0.5f, 0.5f, ConvertToSingleFromString(data[6]));
                         outputs.Add(o2);
 
                         calcOutputs = ann.Train(inputs, outputs);
@@ -93,11 +104,11 @@ public class ANNDrive : MonoBehaviour
                 if(lastSSE < sse)
                 {
                     ann.LoadWeights(currentWeights);
-                    ann.alpha = Mathf.Clamp((float)ann.alpha - 0.01f, 0.01f, 0.9f);
+                    ann.alpha = Mathf.Clamp((float)ann.alpha - 0.001f, 0.01f, 0.9f);
                 }
                 else
                 {
-                    ann.alpha = Mathf.Clamp((float)ann.alpha + 0.01f, 0.01f, 0.9f);
+                    ann.alpha = Mathf.Clamp((float)ann.alpha + 0.001f, 0.01f, 0.9f);
                     lastSSE = sse;
                 }
                 
@@ -107,6 +118,27 @@ public class ANNDrive : MonoBehaviour
         }
 
         trainingDone = true;
+        SaveWeightsToFile();
+    }
+
+    private void SaveWeightsToFile()
+    {
+        string path = Application.dataPath + "/9_Race/weights.txt";
+        StreamWriter sw = File.CreateText(path);
+        sw.WriteLine(ann.PrintWeights());
+        sw.Close();
+    }
+
+    void LoadWeightsFromFile()
+    {
+        string path = Application.dataPath + "/9_Race/weights.txt";
+        StreamReader sw = File.OpenText(path);
+        
+        if(File.Exists(path))
+        {
+            string line = sw.ReadLine();
+            ann.LoadWeights(line);
+        }
     }
 
     private double ConvertFromString(string str)
@@ -183,8 +215,8 @@ public class ANNDrive : MonoBehaviour
         outputs.Add(0);
         
         calcOutputs = ann.CalcOutput(inputs, outputs);
-        float translationInput = (float)Map(-1, 1, 0, 1, (float)calcOutputs[0]);
-        float rotationInput = (float)Map(-1, 1, 0, 1, (float)calcOutputs[1]);
+        float translationInput = (float)Map(-1, 1, -0.5f, 0.5f, (float)calcOutputs[0]);
+        float rotationInput = (float)Map(-1, 1, -0.5f, 0.5f, (float)calcOutputs[1]);
         translation = Time.deltaTime * translationInput * speed;
         rotation = Time.deltaTime * rotationInput * rotationSpeed;
         

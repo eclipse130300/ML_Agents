@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using NeuralNetworkToolkit;
 using UnityEngine;
 
@@ -119,7 +120,7 @@ public class ANN8{
 			{
 				for(int i = 0; i < n.weights.Count; i++)
 				{
-					n.weights[i] = System.Convert.ToDouble(weightValues[w]);
+					n.weights[i] = System.Convert.ToDouble(weightValues[w], CultureInfo.InvariantCulture);
 					w++;
 				}
 			}
