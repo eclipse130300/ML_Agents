@@ -48,7 +48,7 @@ public class PlatformBrain : MonoBehaviour
 
     private void Start()
     {
-        ann = new ANN_DeepLearning(3, 2, 1, 6, 0.5f, ActivationFunctionType.Sigmoid, ActivationFunctionType.Sigmoid);
+        ann = new ANN_DeepLearning(3, 2, 1, 6, 0.5f, ActivationFunctionType.TanH, ActivationFunctionType.Sigmoid);
         ballStartPosition = ball.transform.position;
         //Time.timeScale = 100.0f;
     }

@@ -21,7 +21,7 @@ public class ANN_DeepLearning{
 		int nH,
 		int nPH,
 		double a,
-		ActivationFunctionType hiddenActivationFuncType = ActivationFunctionType.LeakyReLU,
+		ActivationFunctionType hiddenActivationFuncType = ActivationFunctionType.TanH,
 		ActivationFunctionType outputActivationFuncType = ActivationFunctionType.Sigmoid)
 	{
 		numInputs = nI;
