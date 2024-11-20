@@ -766,6 +766,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 832c099cd34297e4cac0124f50296b15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  timeScale: 1
   ball: {fileID: 1510681244}
 --- !u!1 &1510681244
 GameObject:
@@ -894,7 +895,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c94e20bfb8afe1c4b866701d38106148, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  dropped: 0
+  hitted: 0
 --- !u!1 &1557689879
 GameObject:
   m_ObjectHideFlags: 0

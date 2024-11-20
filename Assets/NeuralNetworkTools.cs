@@ -1,5 +1,36 @@
-﻿namespace NeuralNetworkToolkit
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace NeuralNetworkToolkit
 {
+    //for Q-Learning
+    public class Replay
+    {
+        public List<double> states;
+        public double reward;
+
+        public Replay(double xr, double ballz, double ballvx, double r)
+        {
+            states = new List<double>();
+            states.Add(xr);
+            states.Add(ballz);
+            states.Add(ballvx);
+            reward = r;
+        }
+        
+        public Replay(double reward, params double[] values)
+        {
+            states = new List<double>();
+            foreach (var value in values)
+            {
+                states.Add(value);
+            }
+            
+            this.reward = reward;
+        }
+    }
+    
     public enum ActivationFunctionType
     {
         LeakyReLU,
@@ -41,6 +72,23 @@
                 default:
                     return ActivationFunctions.TanH(value);
             }
+        }
+        
+        //used on TOP of activation functions in Q-Learning
+        public static List<double> SoftMax(List<double> values)
+        {
+            double max = values.Max();
+            float scale = 0.0f;
+
+            for (int i = 0; i < values.Count; i++)
+            {
+                scale += (float)Math.Exp(values[i] - max);
+            }
+        
+            List<double> result = new List<double>();
+            for (int i = 0; i < values.Count; i++)
+                result.Add(Math.Exp(values[i] - max) / scale);
+            return result;
         }
     }
 

@@ -5,22 +5,6 @@ using System.Linq;
 using NeuralNetworkToolkit;
 using UnityEngine;
 using UnityStandardAssets.Vehicles.Ball;
-
-public class Replay
-{
-    public List<double> states;
-    public double reward;
-
-    public Replay(double xr, double ballz, double ballvx, double r)
-    {
-        states = new List<double>();
-        states.Add(xr);
-        states.Add(ballz);
-        states.Add(ballvx);
-        reward = r;
-    }
-}
-
 public class PlatformBrain : MonoBehaviour
 {
     [Range(1, 100f)]
@@ -86,7 +70,7 @@ public class PlatformBrain : MonoBehaviour
         states.Add(ball.transform.position.z);
         states.Add(ball.GetComponent<Rigidbody>().angularVelocity.x);
 
-        qs = SoftMax(ann.CalcOutput(states));
+        qs = NeuralNetworkTools.SoftMax(ann.CalcOutput(states));
         double maxQ = qs.Max();
         int maxQIndex = qs.ToList().IndexOf(maxQ);
         exploreRate = Mathf.Clamp(exploreRate - exploreDecay, minExploreRate, maxExploreRate);
@@ -103,7 +87,7 @@ public class PlatformBrain : MonoBehaviour
         else if (maxQIndex == 1)
             transform.Rotate(Vector3.right, -tiltSpeed * (float)qs[maxQIndex]);
 
-        if (ball.GetComponent<BallState>().dropped)
+        if (ball.GetComponent<HitState>().hitted)
         {
             reward = -1.0f;
         }
@@ -118,13 +102,13 @@ public class PlatformBrain : MonoBehaviour
 
         replayMemory.Add(lastMemory);
 
-        if (ball.GetComponent<BallState>().dropped)
+        if (ball.GetComponent<HitState>().hitted)
         {
             for (int i = replayMemory.Count - 1; i >= 0; i--)
             {
                 List<double> toutputsOld = new List<double>();
                 List<double> toutputsNew = new List<double>();
-                toutputsOld = SoftMax(ann.CalcOutput(replayMemory[i].states));
+                toutputsOld = NeuralNetworkTools.SoftMax(ann.CalcOutput(replayMemory[i].states));
 
                 double maxQOld = toutputsOld.Max();
                 int action = toutputsOld.ToList().IndexOf(maxQOld);
@@ -134,7 +118,7 @@ public class PlatformBrain : MonoBehaviour
                     feedback = replayMemory[i].reward;
                 else
                 {
-                    toutputsNew = SoftMax(ann.CalcOutput(replayMemory[i + 1].states));
+                    toutputsNew = NeuralNetworkTools.SoftMax(ann.CalcOutput(replayMemory[i + 1].states));
                     maxQ = toutputsNew.Max();
                     feedback = (replayMemory[i].reward + discount * maxQ);
                 }
@@ -148,7 +132,7 @@ public class PlatformBrain : MonoBehaviour
 
             timer = 0;
 
-            ball.GetComponent<BallState>().dropped = false;
+            ball.GetComponent<HitState>().hitted = false;
             transform.rotation = Quaternion.identity;
             ResetBall();
             replayMemory.Clear();
@@ -161,21 +145,5 @@ public class PlatformBrain : MonoBehaviour
         ball.transform.position = ballStartPosition;
         ball.GetComponent<Rigidbody>().velocity = new Vector3(0, 0, 0);
         ball.GetComponent<Rigidbody>().angularVelocity = new Vector3(0, 0, 0);
-    }
-    
-    private List<double> SoftMax(List<double> values)
-    {
-        double max = values.Max();
-        float scale = 0.0f;
-
-        for (int i = 0; i < values.Count; i++)
-        {
-            scale += (float)Math.Exp(values[i] - max);
-        }
-        
-        List<double> result = new List<double>();
-        for (int i = 0; i < values.Count; i++)
-            result.Add(Math.Exp(values[i] - max) / scale);
-        return result;
     }
 }
